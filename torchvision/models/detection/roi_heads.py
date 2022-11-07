@@ -730,6 +730,7 @@ class RoIHeads(nn.Module):
         proposals,  # type: List[Tensor]
         image_shapes,  # type: List[Tuple[int, int]]
         targets=None,  # type: Optional[List[Dict[str, Tensor]]]
+        force_loss=True
     ):
         # type: (...) -> Tuple[List[Dict[str, Tensor]], Dict[str, Tensor]]
         """
@@ -751,7 +752,7 @@ class RoIHeads(nn.Module):
                     if not t["keypoints"].dtype == torch.float32:
                         raise TypeError(f"target keypoints must of float type, instead got {t['keypoints'].dtype}")
 
-        if self.training:
+        if self.training or force_loss:
             proposals, matched_idxs, labels, regression_targets = self.select_training_samples(proposals, targets)
         else:
             labels = None
@@ -764,7 +765,7 @@ class RoIHeads(nn.Module):
 
         result: List[Dict[str, torch.Tensor]] = []
         losses = {}
-        if self.training:
+        if self.training or force_loss:
             if labels is None:
                 raise ValueError("labels cannot be None")
             if regression_targets is None:
@@ -852,7 +853,7 @@ class RoIHeads(nn.Module):
             keypoint_logits = self.keypoint_predictor(keypoint_features)
 
             loss_keypoint = {}
-            if self.training:
+            if self.training or force_loss:
                 if targets is None or pos_matched_idxs is None:
                     raise ValueError("both targets and pos_matched_idxs should not be None when in training mode")
 

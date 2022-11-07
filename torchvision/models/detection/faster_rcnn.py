@@ -165,6 +165,10 @@ class FasterRCNN(GeneralizedRCNN):
         self,
         backbone,
         num_classes=None,
+        # return parameters
+        return_tuples=False,
+        compute_losses="train_only",
+        compute_detections="eval_only",
         # transform parameters
         min_size=800,
         max_size=1333,
@@ -277,7 +281,7 @@ class FasterRCNN(GeneralizedRCNN):
             image_std = [0.229, 0.224, 0.225]
         transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std, **kwargs)
 
-        super().__init__(backbone, rpn, roi_heads, transform)
+        super().__init__(backbone, rpn, roi_heads, transform, return_tuples, compute_losses, compute_detections)
 
 
 class TwoMLPHead(nn.Module):

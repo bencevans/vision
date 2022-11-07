@@ -25,19 +25,46 @@ class GeneralizedRCNN(nn.Module):
             the model
     """
 
-    def __init__(self, backbone: nn.Module, rpn: nn.Module, roi_heads: nn.Module, transform: nn.Module) -> None:
+    def __init__(
+        self,
+        backbone: nn.Module,
+        rpn: nn.Module,
+        roi_heads: nn.Module,
+        transform: nn.Module,
+        return_tuples: bool,
+        compute_losses="training_only",
+        compute_detections="eval_only",
+    ) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.transform = transform
         self.backbone = backbone
         self.rpn = rpn
         self.roi_heads = roi_heads
+        self.return_tuples = return_tuples
+
+        if compute_losses not in ["training_only", "always"]:
+            torch._assert(False, "compute_losses should be one of 'training_only' (default) or 'always'")
+        if compute_losses == "always" and return_tuples is False:
+            torch._assert(False, "compute_losses='always' is not compatible with return_tuples=False")
+
+        self.compute_losses = compute_losses
+
+        if compute_detections not in ["eval_only", "always"]:
+            torch._assert(False, "compute_detections should be one of 'eval_only' (default) or 'always'")
+        if compute_detections == "always" and return_tuples is False:
+            torch._assert(False, "compute_detections='always' is not compatible with return_tuples=False")
+        self.compute_detections = compute_detections
+
         # used only on torchscript mode
         self._has_warned = False
 
     @torch.jit.unused
     def eager_outputs(self, losses, detections):
-        # type: (Dict[str, Tensor], List[Dict[str, Tensor]]) -> Union[Dict[str, Tensor], List[Dict[str, Tensor]]]
+        # type: (Dict[str, Tensor], List[Dict[str, Tensor]]) -> Union[Dict[str, Tensor], List[Dict[str, Tensor]], Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]]
+        if self.return_tuples is True:
+            return losses, detections
+
         if self.training:
             return losses
 
